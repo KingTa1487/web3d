@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<style>
+
+
+</style>
+</head>
+
+<body background="https://i.imgur.com/jn3P4Ft.jpg" style = "background-size : 1800px 1000px"> 
+<h1><font color = "white"> Hw1</h1>
+<button id='power'>Power</button>
+<img src="https://i.imgur.com/8jaZ0Ww.jpg"  style="position:absolute; top:10vh; left:10vw">
+<div id='bkgd' style="position:absolute; top: 10vh; left: 10vw; width:30vw; height: 60vh; "></div>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<script>
+var powerOn = true;
+
+$('#power').click (function() {
+  powerOn = !powerOn;
+  
+  if (powerOn === true) {  // false--> true
+     lamps.forEach (function(item) {item.startBlink();});
+  }
+});
+
+class Lamp {
+
+  constructor(name, left, top) {
+    this.name = name + Lamp.id++;
+    this.myStatus = false;
+    
+    var el = document.createElement ('div');
+    el.id = this.name;
+    //let text = document.createTextNode (name + ' is OFF');
+    //el.appendChild(text);
+    let bkgd = document.getElementById('bkgd');
+    bkgd.appendChild(el);
+    this.hue = Math.random()*360;
+
+    // styles
+    el.setAttribute ("style", `background-color: hsl(${this.hue}, 100%, 50%); border-radius:80px; width:3%; height:3%;`);
+    this.left = left;
+    this.top = top;
+    el.style.position = "absolute";
+    el.style.left = this.left*100 + '%'; 
+    el.style.top = this.top*100 + '%';
+  }
+
+  toggle() {
+    this.myStatus = ! this.myStatus;
+    
+	let random =Math.random()*2000;
+    if (powerOn) {
+       setTimeout (()=>{this.toggle();}, random);
+    }
+    
+    if (this.myStatus === true) {
+      $('#'+this.name).css('backgroundColor', `hsl(${this.hue},100%,80%)`);
+     // $('#'+this.name).text(this.name + ' is on');
+    } else {
+      $('#'+this.name).css('backgroundColor', `hsl(${this.hue},100%,10%)`);
+      //$('#'+this.name).text(this.name + ' is off');
+    }
+  }
+
+  startBlink() {
+    var that = this;
+/*   
+    setInterval(function() {
+      that.toggle();
+    }, 500);
+*/
+   setTimeout (()=>{ this.toggle(); }, 0);
+     
+    //setInterval (that.toggle, 500);   // somehow, it does not work
+  }
+}
+
+
+Lamp.id = 0; // class variable
+lamps = [];
+
+//small tree
+lamps[0] = new Lamp('light', 0.28, 0.45);
+lamps[1] = new Lamp('light', 0.21, 0.5);
+lamps[2] = new Lamp('light', 0.33, 0.55);
+lamps[3] = new Lamp('light', 0.15, 0.65);
+lamps[4] = new Lamp('light', 0.35*0.7, 0.57);
+lamps[5] = new Lamp('light', 0.28, 0.7);
+lamps[6] = new Lamp('light', 0.37, 0.65);
+lamps[7] = new Lamp('light', 0.175, 0.78);
+lamps[8] = new Lamp('light', 0.35, 0.75);
+
+lamps[9] = new Lamp('light', 0.54, 0.15);
+lamps[10] = new Lamp('light', 0.56, 0.2);
+lamps[11] = new Lamp('light', 0.63, 0.25);
+lamps[12] = new Lamp('light', 0.58, 0.3);
+lamps[13] = new Lamp('light', 0.5, 0.35);
+lamps[14] = new Lamp('light', 0.43, 0.4);
+lamps[15] = new Lamp('light', 0.55, 0.45);
+lamps[16] = new Lamp('light', 0.65, 0.5);
+lamps[17] = new Lamp('light', 0.5, 0.55);
+lamps[18] = new Lamp('light', 0.42, 0.6);
+lamps[19] = new Lamp('light', 0.5, 0.65);
+lamps[20] = new Lamp('light', 0.6, 0.7);
+
+
+/*lamps[0].el.style.left = 80 + '%';
+lamps[0].el.style.top = 80 + '%';
+*/
+/*for (let i = 0; i < 3; i++) {
+   let ll = new Lamp ('light');
+   lamps.push (ll);
+}*/
+
+lamps.forEach ( function(ll) {ll.startBlink();} );
+
+</script>
+</body>
+
+</html>

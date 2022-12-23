@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+
+<html style="height: 1000px; width: 1000px">
+<head>
+<style>
+	body{
+		background-color: teal;
+	}
+	
+	.arcrectangle {
+		width: 400px;
+		height: 250px;
+		background: #FCF3D2;
+		position: absolute;
+		-moz-border-radius: 20px;
+		-webkit-border-radius: 50px;
+		border-radius: 20px;
+	}
+	
+	.bigarcrectangle {
+		width: 400px;
+		height: 550px;
+		background: #FCF3D2;
+		position: absolute;
+		-moz-border-radius: 20px;
+		-webkit-border-radius: 50px;
+		border-radius: 20px;
+	}
+	
+	<!--b{
+		font-size:25px;
+		margin:50px;
+	}-->
+	#square {
+		width: 200px;
+		height: 30px;
+		background:white;
+	}
+</style>
+</head>
+
+<body>
+	<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<button id='get'>count</button>
+	
+	<!--V-->
+	<div class = "arcrectangle" style="position:absolute; top:10vh; left:20vw;"></div>
+		<p style="position:absolute; top:10vh; left:23vw;"><font size="7">V</font></p>
+		<HR width=24% SIZE=2 NOSHADE color="#555555" style="position:absolute; top:18vh; left:21vw;">
+		<p style="position:absolute; top:17vh; left:24vw;"><font size="7">x<br>y<br>z</font></p>
+		<form name="V" id="v">
+			<input id="vx" style="font-size:18px; position:absolute; top:21vh; left:28vw;">
+			<input id="vy" style="font-size:18px; position:absolute; top:28vh; left:28vw;">
+			<input id="vz" style="font-size:18px; position:absolute; top:36vh; left:28vw;">
+		</form>
+	
+	<!--W--> 
+	<div class = "arcrectangle" style="position:absolute; top:50vh; left:20vw;"></div>
+		<p style="position:absolute; top:50vh; left:23vw;"><font size="7">W</font> </p>
+		<HR width=24% SIZE=2 NOSHADE color="#555555" style="position:absolute; top:58vh; left:21vw;">
+		<p style="position:absolute; top:57vh; left:24vw;"><font size="7">x<br>y<br>z</font></p>
+		<form name="W" id="w">
+			<input id="wx" style="font-size:18px; position:absolute; top:61vh; left:28vw;">
+			<input id="wy" style="font-size:18px; position:absolute; top:68vh; left:28vw;">
+			<input id="wz" style="font-size:18px; position:absolute; top:76vh; left:28vw;">
+		</form>
+	
+	<!--內積外積-->
+	<div class = "bigarcrectangle" style="position:absolute; top:10vh; left:50vw;"></div>
+		<!--內-->
+		<p style="position:absolute; top:10vh; left:53vw;"><font size="5">inner product</font> </p>
+		<HR width=24% SIZE=2 NOSHADE color="#555555" style="position:absolute; top:16vh; left:51vw;">
+		<p style="position:absolute; top:17vh; left:53vw;"><font size="7">v．w</font></p>
+		<div id="square" style="position:absolute; top:30vh; left:55vw;"></div>
+		<p id="demo" style="position:absolute; top:28vh; left:55vw;"></p>
+		
+		
+		<!--外-->
+		<p style="position:absolute; top:40vh; left:53vw;"><font size="5">v&emsp;w (vector product)</font> </p>
+		<HR width=24% SIZE=2 NOSHADE color="#555555" style="position:absolute; top:45vh; left:51vw;">
+		<b class="b2" style="position:absolute; top:35.8vh; left:50.8vw;"></b>
+		<p style="position:absolute; top:48vh; left:53vw;"><font size="6">x<br><br>y<br><br>z</font></p>
+		<div id="square" style="position:absolute; top:55vh; left:55vw;"></div>
+		<div id="square" style="position:absolute; top:65vh; left:55vw;"></div>
+		<div id="square" style="position:absolute; top:75vh; left:55vw;"></div>
+		<p id="x" style="position:absolute; top:53vh; left:55vw;"></p>
+		<p id="y" style="position:absolute; top:63vh; left:55vw;"></p>
+		<p id="z" style="position:absolute; top:73vh; left:55vw;"></p>
+</body>
+
+<script>
+	var Element1, Element2, v, w;
+	var count = false;
+	var b2=document.querySelector('.b2');
+	
+	b2.innerHTML='\u00D7';
+	
+	$('#get').click(function(){
+		count = !count;
+		processFormData();
+	});
+	function processFormData() {
+		Element1 = document.getElementById('v');
+		Element2 = document.getElementById('w');
+		
+		v = new THREE.Vector3(Element1[0].value, Element1[1].value, Element1[2].value);
+		w = new THREE.Vector3(Element2[0].value, Element2[1].value, Element2[2].value);
+
+		countVW();
+	}
+	
+	function countVW(){
+		var vw = v.clone().dot(w);
+		var c = new THREE.Vector3();
+		c.crossVectors(v, w);
+		
+		document.getElementById("demo").innerHTML = vw;
+		document.getElementById("x").innerHTML = c.x;
+		document.getElementById("y").innerHTML = c.y;
+		document.getElementById("z").innerHTML = c.z;
+	}	
+
+	
+	
+
+</script>
+
+</html>

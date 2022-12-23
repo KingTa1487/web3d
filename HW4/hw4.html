@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<h1 style="font-size:2em; text-align:center; margin:15px"> 
+HW4
+</h1>
+<hr>
+<div id="container">
+</div>
+
+<div style="width:30vw;float:left; margin:10px;background-color:yellow">
+
+	<button id='save'>Save</button>
+	<button id='clear'>Clear</button><br>
+	<button id='restore'>Restore</button><br>
+	<input type=radio class='gclass' id='placingt' name='g' value='place' checked> Desk
+	<input type=radio class='gclass' id='placing' name='g' value='place' checked> Chair<br>
+	<input type=radio class='gclass' name='g' value='delete'> Delete<br>
+	<p id='debugMsg'></p>
+</div>
+
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+<style>
+#container {
+  width: 60vw;
+  height: 60vw;
+  float: left;
+  background-color: pink;
+  margin: 10px;
+}
+
+p {
+  margin: 10px;
+  text-align: justify;
+}
+</style>
+
+<script>
+var scene, renderer, camera;
+var placing = true, placec = true;
+var floorGroup, chair, desk;
+var mouse = new THREE.Vector2();
+var raycaster = new THREE.Raycaster();
+var chairs = [], desks = [];
+var chairId = 0, deskId = 0;
+
+$('.gclass').click(function() {
+  if ($(this).val() === 'place')
+    placing = true;
+  else // delete
+    placing = false;
+
+	if($(this).id === 'placing')
+		placec = true;
+	else
+		placec = false;
+});
+
+init();
+animate();
+
+$('#save').click( function() {
+
+  // pucks --> puckRecs
+  var recs = [];
+  for (let i = 0; i < chairs.length; i++) {
+    var rec = {};
+    rec.name = chairs[i].name;
+    rec.x = chairs[i].position.x.toFixed(2);
+    rec.z = chairs[i].position.z.toFixed(2);
+    recs.push(rec);
+  }
+  // puckRecs --> JSON.stringify --> localStorage
+  var recLog = JSON.stringify(recs);
+  localStorage.setItem('chairLog', recLog);
+  
+  var recst = [];
+  for (let i = 0; i < desks.length; i++) {
+    var rect = {};
+    rect.name = desks[i].name;
+    rect.x = desks[i].position.x.toFixed(2);
+    rect.z = desks[i].position.z.toFixed(2);
+    recst.push(rect);
+  }
+  
+  var recLogt = JSON.stringify(recst);
+  localStorage.setItem('deskLog', recLogt);
+
+});
+
+$('#clear').click( function() {
+
+  chairs.forEach( function(chair) {
+    chair.removeFromParent();
+  })
+  chairs = [];
+  
+  desks.forEach( function(desk) {
+    desk.removeFromParent();
+  })
+  desks = [];
+});
+
+$('#restore').click(function() {
+
+  // localStorage --> JSON.parse --> puckRecs
+	var parseLog = JSON.parse(localStorage.getItem('chairLog'));
+	for (let i = 0; i < parseLog.length; i++) {
+		var newchair = chair.clone();
+		newchair.position.set(parseLog[i].x, 10, parseLog[i].z);
+		scene.add(newchair);
+		chairs.push (newchair);
+	}
+	
+	var parseLogt = JSON.parse(localStorage.getItem('deskLog'));
+	for (let i = 0; i < parseLogt.length; i++) {
+		var newdesk = desk.clone();
+		newdesk.position.set(parseLogt[i].x, 0, parseLogt[i].z);
+		scene.add(newdesk);
+		desks.push (newdesk);
+	}
+  
+});
+
+function init() {
+
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
+  var ww = $('#container').innerWidth();
+  var hh = $('#container').innerHeight();
+  renderer.setSize(ww, hh);
+  renderer.setClearColor(0x555555);
+  $('#container').append(renderer.domElement);
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(45, ww / hh, 1, 10000);
+  camera.position.set (0, 160, 350)
+  camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+  /*var cyl_geom = new THREE.CylinderGeometry(10, 10, 6, 32);
+  var cyl_mat = new THREE.MeshNormalMaterial();
+  puck = new THREE.Mesh(cyl_geom, cyl_mat);*/
+
+  let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	///////地板
+  var loader = new THREE.TextureLoader();
+ 	floorGroup = new THREE.Group();
+  var grassMap = loader.load ('https://i.imgur.com/StI77Du.jpg');
+  var grassAlpha = loader.load ('https://i.imgur.com/vfMYSRi.png');
+  var grassFloor = new THREE.Mesh (new THREE.PlaneGeometry (300,300), new THREE.MeshBasicMaterial({map: grassMap, transparent:true, alphaMap: grassAlpha}));
+  
+  var mstoneMap = loader.load ('https://i.imgur.com/QcPwaKW.jpg');
+  var mstoneAlpha = loader.load ('https://i.imgur.com/rySvc2b.png');
+  var mstoneFloor = new THREE.Mesh (new THREE.PlaneGeometry (300,300), new THREE.MeshBasicMaterial({map: mstoneMap, transparent:true, alphaMap: mstoneAlpha}));
+
+  var stoneMap = loader.load ('https://i.imgur.com/gguRoXH.jpg');
+  var stoneAlpha = loader.load ('https://i.imgur.com/gvK3plh.png');
+	var stoneFloor = new THREE.Mesh (new THREE.PlaneGeometry (300,300), new THREE.MeshBasicMaterial({map: stoneMap, transparent:true, alphaMap: stoneAlpha}));
+  floorGroup.add (grassFloor, stoneFloor, mstoneFloor);
+  floorGroup.rotation.x = -Math.PI/2;
+	
+  //////////chair
+  //chair = new THREE.Group();
+  var chairMap = loader.load('https://i.imgur.com/UALVZQb.jpg');
+  chair = new THREE.Mesh(new THREE.CylinderGeometry(10, 10, 20, 30), new THREE.MeshBasicMaterial({map: chairMap, transparent:true}));
+  /*var sit = new THREE.Mesh(new THREE.BoxGeometry(20, 8, 20), new THREE.MeshBasicMaterial({map: chairMap, transparent:true}));
+  sit.position.y = 16;
+  var leg1 = new THREE.Mesh(new THREE.BoxGeometry(20, 5, 20), new THREE.MeshBasicMaterial({map: chairMap, transparent:true}));
+  leg1.rotation.z = Math.PI/2;
+  leg1.position.set(-7.5, 10, 0);
+  var leg2 = leg1.clone();
+  leg2.rotation.z = Math.PI/2;
+  leg2.position.set(7.5, 10, 0);
+  chair.add(sit, leg1, leg2);*/
+  
+  desk = new THREE.Group();
+  var deskMap = loader.load('https://i.imgur.com/C8cMJo7.jpg');
+  var sit = new THREE.Mesh(new THREE.BoxGeometry(60, 10, 40), new THREE.MeshBasicMaterial({map: deskMap, transparent:true}));
+  sit.position.y = 35;
+  var leg1 = new THREE.Mesh(new THREE.BoxGeometry(10, 40, 40), new THREE.MeshBasicMaterial({map: deskMap, transparent:true}));
+  leg1.position.set(-25, 20, 0);
+  var leg2 = leg1.clone();
+  leg2.position.set(25, 20, 0);
+  desk.add(sit, leg1, leg2);
+  
+  scene.add (floorGroup);
+  window.addEventListener('resize', onWindowResize, false);
+  $('#container').on("pointerdown", onDocumentMouseDown);
+  $('#container').on("pointerup", onDocumentMouseUp);
+  //window.addEventListener('mousemove', onDocumentMouseMove, false);
+}
+
+function onWindowResize() {
+  var ww = $('#container').innerWidth();
+  var hh = $('#container').innerHeight();
+  camera.aspect = ww / hh;
+  camera.updateProjectionMatrix();
+  renderer.setSize(ww, hh);
+}
+
+function onDocumentMouseDown(event) {
+
+  var viewportPos = $('#container').get(0).getBoundingClientRect();
+  mouse.x = ((event.clientX - viewportPos.left) / $('#container').innerWidth()) * 2 - 1;
+  mouse.y = -((event.clientY - viewportPos.top) / $('#container').innerHeight()) * 2 + 1;
+
+
+  raycaster.setFromCamera(mouse, camera);
+  
+  if(placing == true){
+	var intersects = raycaster.intersectObject(floorGroup);
+    if (intersects.length > 0) {
+      if(placec === true){
+		  var newchair = chair.clone();
+		  newchair.position.copy(intersects[0].point);
+		  newchair.position.y = 10;
+		  newchair.name = 'chair' + chairId++;
+
+		  scene.add(newchair);
+		  chairs.push(newchair);
+	  }
+	  else{
+		  var newdesk = desk.clone();
+		  newdesk.position.copy(intersects[0].point);
+		 // newdesk.position.y = 20;
+		  newdesk.name = 'desk' + deskId++;
+
+		  scene.add(newdesk);
+		  desks.push(newdesk);
+	  }
+  	} 
+  }else{
+  	var intersects = raycaster.intersectObjects(chairs);
+    if (intersects.length > 0) {
+      let thechair = intersects[0].object;
+      //thechair.destroy();
+     
+      thechair.removeFromParent(thechair);
+	
+      // remove thechair from chairs
+      for (let i = 0; i < chairs.length; i++) {
+        if (chairs[i] === thechair) {
+          chairs.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+}
+
+function onDocumentMouseUp(event) {
+
+  if (chairs.length === 0) {
+    placing = true;
+	placec = true;
+    $('#placing').prop('checked', true);
+    // https://stackoverflow.com/questions/15044340/jquery-set-checkbox-checked
+  }
+
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  render();
+
+  $('#debugMsg').text(chairs.length + ' chairs on plane, '+ desks.length + ' desks on plane');
+
+}
+
+function render() {
+  renderer.render(scene, camera);
+}
+
+</script>

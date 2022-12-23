@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<div id="info">HW3<br>
+<a href="https://i.imgur.com/hGgPHXg.jpg">平面設計圖</a><br>
+<a href="https://i.imgur.com/plm2usu.png">燈線</a><br>
+<button id='turn'>power</button>
+<button id='switch'>switch view</button>
+</div>
+<head>	
+
+</head>
+
+<body>
+<script src="https://threejs.org/build/three.min.js"></script>
+<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+<script src="https://jyunming-chen.github.io/tutsplus/js/KeyboardState.js"></script>
+
+
+<script src="Light.js"></script> 
+<script src="wall.js"></script> 
+
+<style>
+	#info {
+		position: absolute;
+		top: 0px;
+		width: 100%;
+		padding: 10px;
+		text-align: center;
+		color: #ffff00
+	}
+
+	body {
+		overflow: hidden;
+	}
+
+</style>
+
+
+ 
+<script>
+	var camera, scene, renderer;
+	var cameraHelper, camera3rd;
+	
+	var chairs = new THREE.Group(), walls = new wall();
+	var lightset = new Light();
+	
+	//參觀者
+	var clock = new THREE.Clock();
+	var keyboard = new KeyboardState();
+	var human;
+	var pos = new THREE.Vector3(0, 50, 500);
+	var vel = new THREE.Vector3();
+	var force = new THREE.Vector3();
+	var power = 0.5, angle = 0;
+	
+	var view1st = true;
+	
+	init();
+	animate();
+
+	$('#turn').click(function(){
+		lightset.switchL = !lightset.switchL;
+		SP(lightset);
+	});
+	
+	//視角
+	$('#switch').click ( function () {
+		view1st= !view1st;
+	})	 
+
+
+	function init() {
+
+		scene = new THREE.Scene();
+			
+		renderer = new THREE.WebGLRenderer();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		renderer.setClearColor(0x888888);
+		document.body.appendChild(renderer.domElement);
+
+		camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 10000);
+		camera.position.set(0, 1000, 800) ; // camera at (0,0,500)
+		camera3rd = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 1000);
+		
+		let controls = new THREE.OrbitControls(camera, renderer.domElement);
+		controls.enableKeys = false;
+		////////////////////////////////////////////////////////
+		const light = new THREE.AmbientLight( 0xcccccc );	//環境光 
+		
+		
+		let floortex = new THREE.TextureLoader().load("https://i.imgur.com/5u2yDfR.jpg");
+		floortex.wrapS = THREE.RepeatWrapping;
+		floortex.wrapT = THREE.RepeatWrapping;
+		floortex.repeat.set(6, 9);
+		let floormat = new THREE.MeshLambertMaterial({
+			map : floortex,
+			side : THREE.DoubleSide
+		});
+		let floor = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), floormat);
+		floor.rotation.x = Math.PI/2;
+		floor.position.y = -0.1;
+		
+		human = new THREE.Mesh(new THREE.ConeGeometry( 10, 50, 8 ), new THREE.MeshNormalMaterial());
+		human.position.set(0, 25, 500);
+		human.rotation.z = -Math.PI/2;
+		
+		
+		scene.add( light, lightset.tipe, lightset.light);
+		
+		//chairs
+		//1
+		buildChair(60, 120);
+		chairs.children[0].position.set(-330, 0, 280);
+		//2
+		buildChair(90, 90);
+		chairs.children[1].position.set(0, 0, 90);
+		//3
+		buildChair(90, 200);
+		chairs.children[2].position.set(-130, 0, -150);
+		//4
+		buildChair(200, 120);
+		chairs.children[3].position.set(250, 0, -260);
+		
+		scene.add (floor, chairs, walls.walls, human);
+		
+		
+		//視角
+		cameraHelper = makeCameraHelper();
+		scene.add (cameraHelper);
+	}
+	
+	//參觀者視角
+	function makeCameraHelper() {
+		var cameraModel = new THREE.Group();
+		var body = new THREE.Mesh (new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial());
+		cameraModel.add (body);
+  
+		return cameraModel;
+	}
+	
+	function buildChair(l, w) {
+		var group = new THREE.Group();
+		var leatherTex = new THREE.TextureLoader().load("https://i.imgur.com/vTwbcKR.png");
+		var mat = new THREE.MeshLambertMaterial({
+			map: leatherTex
+		});
+		var boxTop = new THREE.Mesh(new THREE.BoxGeometry(l, 15, w), mat);
+		
+		var boxLeg1 = new THREE.Mesh(new THREE.BoxGeometry(5, 10, 5), new THREE.MeshLambertMaterial({color:'black'}));
+		var boxLeg2 = boxLeg1.clone();
+		var boxLeg3 = boxLeg1.clone();
+		var boxLeg4 = boxLeg1.clone();
+		boxTop.position.set(0, 17.5, 0);
+		boxLeg1.position.set(-l/2+5, 5, -w/2+5);
+		boxLeg2.position.set(-l/2+5, 5, w/2-5);
+		boxLeg3.position.set(l/2-5, 5, -w/2+5);
+		boxLeg4.position.set(l/2-5, 5, w/2-5);
+		
+		group.add(boxTop, boxLeg1, boxLeg2, boxLeg3, boxLeg4);
+		chairs.add(group);
+	}
+	function update(dt) {
+		keyboard.update();
+  
+	  
+		if (vel.length() > 0) {
+			angle = 1.5*Math.PI + Math.atan2(vel.x, vel.z); 
+		}
+
+		if (keyboard.pressed("space"))  
+			power = 0.05;               
+		if (keyboard.pressed("up"))  
+			power *= 1.05;          
+	  
+		var angle_thrust = angle;
+		if (keyboard.pressed("left"))
+			angle_thrust += 0.3;
+		if (keyboard.pressed("right"))
+			angle_thrust -= 0.3;
+		
+		// compute force
+		var thrust = new THREE.Vector3(1,0,0).multiplyScalar(power).applyAxisAngle (new THREE.Vector3(0,1,0), angle_thrust);
+		force.copy (thrust);
+		force.add(vel.clone().multiplyScalar(-2));
+
+		// eulers
+		vel.add(force.clone().multiplyScalar(dt));
+		pos.add(vel.clone().multiplyScalar(dt));
+	}
+
+	function animate() {
+		var dt = clock.getDelta();
+		update(dt);
+		human.position.copy(pos);
+		human.rotation.y = angle;
+
+		////////camera
+		// third person camera
+		var thirdPos = human.localToWorld (new THREE.Vector3(0 ,0 ,0));
+		var thirdAt = human.localToWorld (new THREE.Vector3(0, 80, 0));
+		camera3rd.position.copy (thirdPos);
+		camera3rd.lookAt (thirdAt);
+			
+		cameraHelper.position.copy (camera3rd.position);
+		cameraHelper.quaternion.copy (camera3rd.quaternion);
+   
+		if (view1st)
+			renderer.render (scene, camera3rd);
+		else
+			renderer.render (scene, camera);
+			
+		requestAnimationFrame(animate);
+	}
+</script>
+</body>
+</html>
